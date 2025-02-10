@@ -1,127 +1,88 @@
-# Projeto interface de comunicação serial com RP2040 e I2C 
+# Projeto de Comunicação Serial e Controle de LEDs com RP2040
 
-Esse projeto faz uso do display que tem quase todos os caracteres incluidos, e faz uso da matriz de led que imprime os numeros de 0 a 9, e também o push button que tem como funcionalidade alternar o estado led RGB e informar o estado do led pelo serial monitor e pelo display.
+Este projeto foi desenvolvido como parte de uma atividade prática para consolidar os conceitos de comunicação serial, controle de LEDs e uso de interrupções com o microcontrolador RP2040 na placa BitDogLab. O projeto combina hardware e software para criar uma aplicação interativa que utiliza LEDs WS2812, um display SSD1306, LEDs RGB e botões.
 
-## Hardware 🛠️
+## Descrição do Projeto
 
-- Microcontrolador RP2040 (Raspberry Pi Pico).
-- pushbotton.
-- SSD1306 OLED DISPLAY.
-- Display NeoPixel RGB 5x5.
-- LED RGB.
-- Placa BitDogLab
+O projeto tem como objetivo demonstrar o uso de interfaces de comunicação serial (UART e I2C) e o controle de diferentes tipos de LEDs (comuns e endereçáveis WS2812). Além disso, o projeto utiliza interrupções para tratar eventos de botões e implementa técnicas de debouncing para garantir a confiabilidade das entradas.
 
-## Software 💻
+### Componentes Utilizados
 
-* **SDK do Raspberry Pi Pico:** O SDK (Software Development Kit) do Pico, que inclui as bibliotecas e ferramentas necessárias para desenvolver e compilar o código. [Instruções de instalação](https://www.raspberrypi.com/documentation/pico/getting-started/)
-* **CMake:** Um sistema de construção multiplataforma usado para gerar os arquivos de construção do projeto.
-* **Compilador C/C++:**  Um compilador C/C++ como o GCC (GNU Compiler Collection).
-* **Git:** (Opcional) Para clonar o repositório do projeto.
+- **Matriz 5x5 de LEDs WS2812**: Conectada à GPIO 7.
+- **LED RGB**: Conectado às GPIOs 11 (Verde), 12 (Azul) e 13 (Vermelho).
+- **Botão A**: Conectado à GPIO 5.
+- **Botão B**: Conectado à GPIO 6.
+- **Display SSD1306**: Conectado via I2C (GPIO 14 e GPIO 15).
 
+### Funcionalidades
 
-### O código está dividido em vários arquivos para melhor organização:
+1. **Modificação da Biblioteca `font.h`**:
+   - Foram adicionados caracteres minúsculos à biblioteca `font.h` para exibição no display SSD1306.
 
-- **`Comunicacao_serial.c`**: Código que tem como função gerar quase todos os caracteres no display, gerar animações dos numeros de 0 a 9 na matriz de Led, e com o uso de interrupção alternar o estado do led RGB com push button.
-- - **`font.h`:** possibilitar o uso de caracteres no SSD1306 OLED DISPLAY.
-- **`CMakeLists.txt`:** Define a estrutura do projeto para o CMake.
+2. **Entrada de Caracteres via PC**:
+   - Caracteres digitados no Serial Monitor do VS Code são exibidos no display SSD1306.
+   - Quando um número entre 0 e 9 é digitado, um símbolo correspondente é exibido na matriz 5x5 de LEDs WS2812.
 
+3. **Interação com o Botão A**:
+   - Pressionar o botão A alterna o estado do LED RGB Verde.
+   - O estado do LED é exibido no display SSD1306 e enviado ao Serial Monitor.
 
+4. **Interação com o Botão B**:
+   - Pressionar o botão B alterna o estado do LED RGB Azul.
+   - O estado do LED é exibido no display SSD1306 e enviado ao Serial Monitor.
 
-## Como Compilar e Executar ⚙️
+### Requisitos do Projeto
 
-1. **Instale o SDK do Raspberry Pi Pico:** Siga as instruções no site oficial do Raspberry Pi.
-2. **Clone este repositório:** https://github.com/wesiley/I2C_CEPEDI
-3. **Navegue até o diretório do projeto:** `cd I2C_CEPEDI`
-4. **Compile o projeto:** `cmake -B build && cmake --build build`
-5. **Copie para o Pico:** Copie o conteúdo da pasta `build` (gerada após a compilação) para o Raspberry Pi Pico. O programa iniciará automaticamente.
+- **Uso de Interrupções**: Todas as funcionalidades relacionadas aos botões são implementadas utilizando rotinas de interrupção (IRQ).
+- **Debouncing**: O tratamento do bouncing dos botões é feito via software.
+- **Controle de LEDs**: O projeto inclui o controle de LEDs comuns e LEDs WS2812.
+- **Utilização do Display SSD1306**: O display é utilizado para exibir mensagens informativas e caracteres digitados pelo usuário.
+- **Envio de Informação pela UART**: A comunicação serial via UART é utilizada para enviar informações ao Serial Monitor.
+- **Organização do Código**: O código está bem estruturado e comentado para facilitar o entendimento.
 
+## Estrutura do Código
 
-## Funcionamento do Loop Principal 🔄 
-```
-void handle_char() {
-    // Verifica se há caracteres disponíveis na entrada USB
-    int receivedChar = getchar();
+O código está organizado em várias funções principais:
 
-    if (receivedChar != PICO_ERROR_TIMEOUT) { // Se um caractere foi recebido
-        // Exibição do caractere no display
-        ssd1306_fill(&ssd, false);
-        ssd1306_draw_string(&ssd, "Caractere: ", 10, 10);
-        char buffer[2] = {(char)receivedChar, '\0'};
-        ssd1306_draw_string(&ssd, buffer , 90, 10);
-        ssd1306_send_data(&ssd);
-        printf("Caractere: %c", receivedChar);
+- **Inicialização**:
+  - `inicializar_i2c()`: Configura a comunicação I2C para o display SSD1306.
+  - `inicializar_display()`: Inicializa o display SSD1306.
+  - `inicializar_ws2812()`: Configura os LEDs WS2812.
+  - `inicializar_botoes()`: Configura os botões com interrupções.
+  - `inicializar_leds()`: Configura os LEDs RGB.
 
-        // Exibição de número na matriz WS2812 (se for um número)
-        if (receivedChar >= '0' && receivedChar <= '9') {
-            int number = receivedChar - '0';
-            display_number(number); // Exibe o número na matriz de LEDs
-        }
-    }
-}
-while (true) {
-        if (stdio_usb_connected()) {
-            
-            handle_char(); // Verifica se há caracteres recebidos via UART
-        }
-        sleep_ms(100); // Pequeno delay para evitar sobrecarga
-    }
-   
-  ```
-O loop while (true) garante execução contínua. O código lê um caractere e o exibe no display OLED e no terminal. Se for um número (0-9), ele também é exibido na matriz de LEDs WS2812. O loop principal verifica a conexão USB e chama handle_char() a cada 100ms. 
+- **Manipulação de LEDs**:
+  - `set_number(int num)`: Exibe um número na matriz de LEDs WS2812.
+  - `put_pixel(uint32_t pixel_grb)`: Envia um pixel para a matriz de LEDs WS2812.
+  - `urgb_u32(uint8_t r, uint8_t g, uint8_t b)`: Converte valores RGB para um formato de 32 bits.
 
-## Funcionamento da interrupção.
-```
-// Função para tratar interrupções dos botões
-void gpio_irq_handler(uint gpio, uint32_t events) {
-    static absolute_time_t ultimo_tempo_a = 0;
-    static absolute_time_t ultimo_tempo_b = 0;
+- **Tratamento de Interrupções**:
+  - `gpio_irq_handler(uint gpio, uint32_t eventos)`: Manipula as interrupções dos botões A e B.
 
-    if (gpio == BUTTON_A) {
-        static absolute_time_t lastInterruptTime = 0;
-        absolute_time_t now = get_absolute_time();
+- **Entrada de Dados**:
+  - `tratar_usb()`: Lê caracteres da entrada USB e os exibe no display e na matriz de LEDs.
+  - `mostrar_aleatorio()`: Exibe caracteres aleatórios no display e na matriz de LEDs.
 
-        // Debounce
-        if (absolute_time_diff_us(lastInterruptTime, now) > 200000) {
-            greenLedState = !greenLedState;
-            gpio_put(LED_RGB_GREEN, greenLedState);
+## Como Executar o Projeto
 
-            // Atualização do display
-            ssd1306_fill(&ssd, false);
-            ssd1306_draw_string(&ssd, greenLedState ? "Led Verde Ligado" : "Led Verde Desligado", 10, 10);
-            ssd1306_send_data(&ssd);
+1. **Compilação**:
+   - Utilize o ambiente de desenvolvimento do Pico SDK para compilar o código.
+   - Certifique-se de que todas as bibliotecas necessárias estão instaladas e configuradas corretamente.
 
-            // Envio de mensagem ao Serial Monitor
-            printf(greenLedState ? "Led Verde Ligado\n" : "Led Verde Desligado\n");
-        }
-        lastInterruptTime = now;
-    } else if (gpio == BUTTON_B) {
-        static absolute_time_t lastInterruptTime = 0;
-        absolute_time_t now = get_absolute_time();
+2. **Upload**:
+   - Conecte a placa BitDogLab ao computador via USB.
+   - Carregue o código compilado na placa.
 
-        // Debounce
-        if (absolute_time_diff_us(lastInterruptTime, now) > 200000) {
-            blueLedState = !blueLedState;
-            gpio_put(LED_RGB_BLUE, blueLedState);
+3. **Execução**:
+   - Abra o Serial Monitor no VS Code para interagir com o projeto.
+   - Digite caracteres para exibi-los no display e na matriz de LEDs.
+   - Pressione os botões A e B para alternar os estados dos LEDs RGB Verde e Azul.
 
-            // Atualização do display
-            ssd1306_fill(&ssd, false);
-            ssd1306_draw_string(&ssd, blueLedState ? "Led Azul Ligado" : "Led Azul Desligado", 10, 10);
-            ssd1306_send_data(&ssd);
+## Conclusão
 
-            // Envio de mensagem ao Serial Monitor
-            printf(blueLedState ? "Led Azul Ligado\n" : "Led Azul Desligado\n");
-        }
-        lastInterruptTime = now;
-    }
-}
-  ```
-A função void gpio_irq_handler tem como objetivo fazer com que ocorra as ações no pushbotton . ultimo_tempo_a, ultimo_tempo_b e lastInterruptTime tem como função fazer o debounce para controlar a acção do pushbotton e evita alguns problemas. if(gpio) para dividir a função de A para alternar o estado do led verde e imprimir a informação do estado do led no display e no serial monitor e B  para alternar o estado do azul e imprimir a informação do estado do led no display e no serial monitor. 
+Este projeto demonstra a integração de diferentes componentes e técnicas de programação para criar uma aplicação interativa com o RP2040. Através da manipulação de LEDs, uso de interrupções e comunicação serial, o projeto oferece uma visão prática do desenvolvimento de sistemas embarcados.
 
-## Diagrama de Conexões 💡:
+## Autor
 
-
-
-  
- ## 🔗 Link do Vídeo de Funcionamento:
-
-
+- **Nome**: Gabriel Santos dos Santos
+- **Data**: 09/02/2025

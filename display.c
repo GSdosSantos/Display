@@ -29,7 +29,7 @@ ssd1306_t display;
 #define BOTAO_B 6
 // Matriz 5x5 de LEDs WS2812
 #define NUMERO_LEDS 25  
-#define led_r 255
+#define led_r 100
 #define led_g 0
 #define led_b 0
 #define PINO_WS2812 7
@@ -210,11 +210,11 @@ void tratar_usb() {
         i=(i+1)%12;
         i++;
         // Exibição no display
-        //ssd1306_fill(&display, false);
+ 
         buffer[i] = caractere;
         ssd1306_draw_string(&display, buffer, 10, 30);
         ssd1306_send_data(&display);
-        printf("Caractere: %c", caractere);
+        printf("Caractere: %c \n", caractere);
 
         // Exibição de número na matriz WS2812 (se for um número)
         if (caractere >= '0' && caractere <= '9') {
@@ -240,10 +240,10 @@ int main() {
         if (stdio_usb_connected()) {
             bool cor = true;
             cor = !cor;
-            ssd1306_rect(&display, 3, 3, 122, 58, cor, !cor); // Desenha um retângulo
+            //ssd1306_rect(&display, 3, 3, 122, 58, cor, !cor); // Desenha um retângulo
             tratar_usb(); // Verifica se há caracteres recebidos via USB
         }
-        mostrar_aleatorio();
+        //mostrar_aleatorio();
         sleep_ms(500); // Pequeno delay para evitar sobrecarga
     }
 }
